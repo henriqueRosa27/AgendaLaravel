@@ -1,12 +1,10 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Agenda;
 use App\API\APIError;
-Use App\API\Funcoes;
 
 class AgendaController extends Controller
 {
@@ -41,10 +39,15 @@ class AgendaController extends Controller
     public function store(Request $request)
     {
         try {
+            $valida = validator($request->all(), $this->agenda->regaValidacao, $this->agenda->mensagensValidacao);
+            if($valida->fails()){
+                //return $valida->errors();
+                $data = ['data' => $valida->messages()];
+                return response()->json($data);
+            }
+
             $dataInicial = $request->get('data_inicio');
             $dataPrazo = $request->get('data_prazo');
-            $status = $request->get('status');
-            $titulo = $request->get('titulo');
             $responsavel = $request->get('responsavel');
 
             //Verifica Variavel data_conclusao recebida
@@ -59,25 +62,6 @@ class AgendaController extends Controller
                 $descricao = NULL;
             } else {
                 $descricao = $request->get('descricao');
-            }
-
-            if (is_null($dataInicial) || empty($dataInicial) || $dataInicial == "0000-00-00"
-                || is_null($dataPrazo) || empty($dataPrazo) || $dataPrazo == "0000-00-00"
-                || is_null($status) || empty($status)
-                || is_null($titulo) || empty($titulo)
-                || is_null($responsavel) || empty($responsavel)
-            ) {
-                $data = ['data' => 'Valores obrigatórios passados como NULL, vazios ou incorretos. Favor conferir valores informados.'];
-                return response()->json($data);
-            }
-
-            if ($dataInicial > $dataPrazo) {
-                $data = ['data' => 'Data inicial maior que a final'];
-                return response()->json($data);
-            }
-            if ($dataConclusao != "0000-00-00" && !is_null($dataConclusao) && $dataInicial > $dataConclusao) {
-                $data = ['data' => 'Data inicial maior que a de conclusão'];
-                return response()->json($data);
             }
 
             //Valida Finais de semana
@@ -134,6 +118,14 @@ class AgendaController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            /*PREFERI RETIRAR ESSA VALIDAÇÃO, CASO EU RECEBA PARA ATUALIZAR SOMENTE UM DADO
+            $valida = validator($request->all(), $this->agenda->regaValidacao, $this->agenda->mensagensValidacao);
+            if($valida->fails()){
+                //return $valida->errors();
+                $data = ['data' => $valida->messages()];
+                return response()->json($data);
+            }*/
+
             $busca = $this->agenda->find($id);
 
             $dataInicial = $request->get('data_inicio');
