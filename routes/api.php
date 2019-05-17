@@ -24,5 +24,6 @@ Route::namespace('API')->name('api.')->group(function(){
         Route::post('/', 'AgendaController@store')->name('store_agenda');
         Route::put('/{id}', 'AgendaController@update')->name('update_agenda');
         Route::delete('/{id}', 'AgendaController@delete')->name('delete_agenda');
+        Route::get('/{data_inicial}/{data_final}', 'AgendaController@search')->name('search_agenda');
     });
 });
