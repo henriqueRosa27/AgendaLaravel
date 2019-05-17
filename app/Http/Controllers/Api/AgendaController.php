@@ -61,8 +61,8 @@ class AgendaController extends Controller
                 $descricao = $request->get('descricao');
             }
 
-            if (is_null($dataInicial) || empty($dataInicial) || $dataInicial != "0000-00-00"
-                || is_null($dataPrazo) || empty($dataPrazo) || $dataPrazo != "0000-00-00"
+            if (is_null($dataInicial) || empty($dataInicial) || $dataInicial == "0000-00-00"
+                || is_null($dataPrazo) || empty($dataPrazo) || $dataPrazo == "0000-00-00"
                 || is_null($status) || empty($status)
                 || is_null($titulo) || empty($titulo)
                 || is_null($responsavel) || empty($responsavel)
@@ -80,26 +80,18 @@ class AgendaController extends Controller
                 return response()->json($data);
             }
 
-
-            /*$validatedData = $this->validate($request,[
-                'data_inicio' => 'required|before:data_prazo',
-                'data_prazo' => 'required',
-                //'data_conclusao' => 'date_format:"Y-m-d"|after:data_inicio'
-            ]);
-
-            /f($validatedData->fails()){
-                $data = ['data' => $validatedData->errors()];
-                return response()->json($data);
-            }*/
-
-            //Valida FInais de semana
-            if( Funcoes::ValidaFinaisDeSemana($dataInicial) || Funcoes::ValidaFinaisDeSemana($dataPrazo) || Funcoes::ValidaFinaisDeSemana($dataConclusao)){
+            //Valida Finais de semana
+            if( Agenda::ValidaFinaisDeSemana($dataInicial) || Agenda::ValidaFinaisDeSemana($dataPrazo) || Agenda::ValidaFinaisDeSemana($dataConclusao)){
                 $data = ['data' => 'As datas não podem ser em finais de semana.'];
                 return response()->json($data);
             }
 
-            //$data = ['data' => 'OK'];
-            //return response()->json($data);
+            //Validação para não sobrepor compromissos de um mesmo responsavel
+            if(Agenda::VerificaDataAgendaUp($dataInicial, $dataPrazo, $responsavel, $this->agenda)){
+                $data = ['data' => 'Não pode cadastrar na mesma data ou que se sobreponham à outras datas de atividades de um mesmo responsavel'];
+                return response()->json($data);
+            }
+
             $agendaData = $request->all();
             $this->agenda->create($agendaData);
 
@@ -128,7 +120,6 @@ class AgendaController extends Controller
             $return = ['data' => ['mg' => 'Produto não encontrado']];
             return response()->json($return, 404);
         }
-
         $data = ['data' => $agenda];
         return response()->json($data);
     }
@@ -146,27 +137,27 @@ class AgendaController extends Controller
             $busca = $this->agenda->find($id);
 
             $dataInicial = $request->get('data_inicio');
-            $dataPrazo = $request->get('data_prazo');
-            $status = $request->get('status');
-            $titulo = $request->get('titulo');
-            $responsavel = $request->get('responsavel');
-
-            if($busca->data_inicio != $dataInicial){
+            //$dataPrazo = $request->get('data_prazo');
+            $dataConclusao = $request->get('data_conclusao');
+            if($busca->data_inicio != $dataInicial && !is_null($dataInicial)){
                 $data = ['data' => 'Data inicial não pode ser alterada'];
                 return response()->json($data);
             }
 
-            //Verifica Variavel data_conclusao recebida
-            if (is_null($request->get('data_conclusao'))) {
-                $dataConclusao = NULL;
-            } else {
-                $dataConclusao = $request->get('data_conclusao');
+            //Verifica se recebeu novo dado
+            if($request->get('data_prazo')){
+                $dataPrazo = $request->get('data_prazo');
+            }//Se não, seta variavel do banco
+            else{
+                $dataPrazo = $busca->data_prazo;
             }
-            //Verifica Variavel descricao recebida
-            if (is_null($request->get('descricao'))) {
-                $descricao = NULL;
-            } else {
-                $descricao = $request->get('descricao');
+
+            //Verifica se recebeu novo dado
+            if($request->get('responsavel')){
+                $responsavel = $request->get('responsavel');
+            }//Se não, seta variavel do banco
+            else{
+                $responsavel = $busca->responsavel;
             }
 
             if ($dataInicial > $dataPrazo) {
@@ -179,12 +170,15 @@ class AgendaController extends Controller
             }
 
             //Valida FInais de semana
-            if( Funcoes::ValidaFinaisDeSemana($dataInicial) || Funcoes::ValidaFinaisDeSemana($dataInicial) || Funcoes::ValidaFinaisDeSemana($dataInicial)){
+            if( Agenda::ValidaFinaisDeSemana($dataInicial) || Agenda::ValidaFinaisDeSemana($dataPrazo) || Agenda::ValidaFinaisDeSemana($dataConclusao)){
                 $data = ['data' => 'As datas não podem ser em finais de semana.'];
                 return response()->json($data);
             }
-            //$data = ['data' => 'OK'];
-            //return response()->json($data);
+            //Validação para não sobrepor compromissos de um mesmo responsavel
+            if(Agenda::VerificaDataAgendaUp($dataInicial, $dataPrazo, $responsavel, $this->agenda)){
+                $data = ['data' => 'Não pode cadastrar na mesma data ou que se sobreponham à outras datas de atividades de um mesmo responsavel'];
+                return response()->json($data);
+            }
             $agendaData = $request->all();
             $agenda =  $this->agenda->find($id);
             $agenda->update($agendaData);
