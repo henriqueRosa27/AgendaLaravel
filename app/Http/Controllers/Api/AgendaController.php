@@ -1,10 +1,12 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Agenda;
+//use App\Agenda; //Remover após implementear todo Repository
 use App\API\APIError;
+use App\Repositories\AgendaRepository;
 
 class AgendaController extends Controller
 {
@@ -13,7 +15,7 @@ class AgendaController extends Controller
      */
     private $agenda;
 
-    public function __construct(Agenda $agenda)
+    public function __construct(AgendaRepository $agenda)
     {
         $this->agenda = $agenda;
     }
@@ -25,8 +27,9 @@ class AgendaController extends Controller
      */
     public function index()
     {
-        $data = ['data' => $this->agenda->all()];
+        //$data = ['data' => $this->agenda->all()];
         //$data = Funcoes::ValidaFinaisDeSemana('2019-05-16');
+        $data = ['data' => $this->agenda->all()];
         return response()->json($data);
     }
 
@@ -39,7 +42,7 @@ class AgendaController extends Controller
     public function store(Request $request)
     {
         try {
-            $valida = validator($request->all(), $this->agenda->regaValidacao, $this->agenda->mensagensValidacao);
+            $valida = validator($request->all(), $this->agenda->regraValidacao, $this->agenda->mensagemValidacao);
             if($valida->fails()){
                 //return $valida->errors();
                 $data = ['data' => $valida->messages()];
@@ -65,13 +68,13 @@ class AgendaController extends Controller
             }
 
             //Valida Finais de semana
-            if( Agenda::ValidaFinaisDeSemana($dataInicial) || Agenda::ValidaFinaisDeSemana($dataPrazo) || Agenda::ValidaFinaisDeSemana($dataConclusao)){
+            if( AgendaRepository::ValidaFinaisDeSemana($dataInicial) || AgendaRepository::ValidaFinaisDeSemana($dataPrazo)){
                 $data = ['data' => 'As datas não podem ser em finais de semana.'];
                 return response()->json($data);
             }
 
             //Validação para não sobrepor compromissos de um mesmo responsavel
-            if(Agenda::VerificaDataAgendaUp($dataInicial, $dataPrazo, $responsavel, $this->agenda)){
+            if(AgendaRepository::VerificaDataAgendaUp($dataInicial, $dataPrazo, $responsavel)){
                 $data = ['data' => 'Não pode cadastrar na mesma data ou que se sobreponham à outras datas de atividades de um mesmo responsavel'];
                 return response()->json($data);
             }
@@ -98,6 +101,7 @@ class AgendaController extends Controller
      */
     public function show($id)
     {
+        //$agenda = $this->agenda->findBy('id',$id);
         $agenda = $this->agenda->find($id);
 
         if(!$agenda){
@@ -118,8 +122,9 @@ class AgendaController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            /*PREFERI RETIRAR ESSA VALIDAÇÃO, CASO EU RECEBA PARA ATUALIZAR SOMENTE UM DADO
-            $valida = validator($request->all(), $this->agenda->regaValidacao, $this->agenda->mensagensValidacao);
+            /*ESSA VALIDARA FOI RETIRADA, CASO RECEBA PARA SOMENTE UM DADO ATUALIZAR
+             *CASO OPTAR POR RECEBER TODOS OS DADOS DO USUARIO PARA DAR O UPDATE, SOMENTE DESCOMENTAR
+            $valida = validator($request->all(), $this->agenda->$regraValidacao, $this->agenda->mensagensValidacao);
             if($valida->fails()){
                 //return $valida->errors();
                 $data = ['data' => $valida->messages()];
@@ -161,16 +166,18 @@ class AgendaController extends Controller
                 return response()->json($data);
             }
 
-            //Valida FInais de semana
-            if( Agenda::ValidaFinaisDeSemana($dataInicial) || Agenda::ValidaFinaisDeSemana($dataPrazo) || Agenda::ValidaFinaisDeSemana($dataConclusao)){
+            //Valida Finais de semana
+            //Retirada data_inicial, pois a validação já foi feita no insert, e não pode mais alterar a data a partir disso
+            if( AgendaRepository::ValidaFinaisDeSemana($dataPrazo) || AgendaRepository::ValidaFinaisDeSemana($dataConclusao)){
                 $data = ['data' => 'As datas não podem ser em finais de semana.'];
                 return response()->json($data);
             }
-            //Validação para não sobrepor compromissos de um mesmo responsavel
-            if(Agenda::VerificaDataAgendaUp($dataInicial, $dataPrazo, $responsavel, $this->agenda)){
+            //Validação para não sobrepor compromissos de um mesmo responsavel em relação as datas
+            if(AgendaRepository::VerificaDataAgendaUp($dataInicial, $dataPrazo, $responsavel, $this->agenda)){
                 $data = ['data' => 'Não pode cadastrar na mesma data ou que se sobreponham à outras datas de atividades de um mesmo responsavel'];
                 return response()->json($data);
             }
+
             $agendaData = $request->all();
             $agenda =  $this->agenda->find($id);
             $agenda->update($agendaData);
@@ -192,10 +199,10 @@ class AgendaController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function delete(Agenda $id)
+    public function delete($id)
     {
         try{
-            $id->delete();
+            $this->agenda->delete($id);
             $return = ['data' => ['mg' => 'Tarefa excluida com sucesso']];
             return response()->json($return, 201);
         }
@@ -207,7 +214,7 @@ class AgendaController extends Controller
         }
     }
     public function search($data_inicial, $data_final){
-        $data = $this->agenda->where('data_inicio','>=',$data_inicial)->where('data_inicio','<=',$data_final)->get();
+        $data = $this->agenda->search($data_inicial,$data_final);
         $data = ['data' => $data];
         return response()->json($data);
     }
