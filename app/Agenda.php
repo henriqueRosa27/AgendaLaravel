@@ -17,7 +17,6 @@ class Agenda extends Model
         'titulo',
         'descricao',
         'responsavel',
-
     ];
     //protected $hidden = ['id'];
 

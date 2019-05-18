@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Agenda;
+use App\Tranformers\TransformAgenda;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 //use App\Agenda; //Remover após implementear todo Repository
 use App\API\APIError;
 use App\Repositories\AgendaRepositoryInterface;
+use League\Fractal\Manager;
+use League\Fractal\Resource\Collection;
 
 class AgendaController extends Controller
 {
@@ -15,10 +18,12 @@ class AgendaController extends Controller
      * @var Agenda
      */
     private $agenda;
+    //private $fractal;
 
-    public function __construct(AgendaRepositoryInterface $agenda)
+    public function __construct(AgendaRepositoryInterface $agenda/*, Manager $fractal*/)
     {
         $this->agenda = $agenda;
+        //$this->fractal = $fractal;
     }
 
     /**
@@ -28,10 +33,14 @@ class AgendaController extends Controller
      */
     public function index()
     {
-        //$data = ['data' => $this->agenda->all()];
         //$data = Funcoes::ValidaFinaisDeSemana('2019-05-16');
-        $data = ['data' => $this->agenda->all()];
-        return response()->json($data);
+        //$data = ['data' => $this->agenda->all()];
+        //$dados = $this->agenda->all();
+        /*$data = new Collection($this->agenda->all(), new TransformAgenda());
+        return $this->fractal->createData($data)->toJson();*/
+        $dados = $this->agenda->all();
+        $fractal = fractal($dados, new TransformAgenda());
+        return response()->json($fractal);
     }
 
     /**
@@ -110,8 +119,11 @@ class AgendaController extends Controller
             $return = ['data' => ['mg' => 'Produto não encontrado']];
             return response()->json($return, 404);
         }
+        /*$data = new Collection($this->agenda->all(), new TransformAgenda());
+        return $this->fractal->createData($data)->toJson();*/
         $data = ['data' => $agenda];
-        return response()->json($data);
+        $fractal = fractal($data, new TransformAgenda());
+        return response()->json($fractal);
     }
 
     /**
@@ -124,7 +136,7 @@ class AgendaController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            /*ESSA VALIDARA FOI RETIRADA, CASO RECEBA PARA SOMENTE UM DADO ATUALIZAR
+            /*ESSA VALIDARCAO FOI RETIRADA, CASO RECEBA PARA SOMENTE UM DADO ATUALIZAR
              *CASO OPTAR POR RECEBER TODOS OS DADOS DO USUARIO PARA DAR O UPDATE, SOMENTE DESCOMENTAR
             $valida = validator($request->all(), $this->agenda->$regraValidacao, $this->agenda->mensagensValidacao);
             if($valida->fails()){
