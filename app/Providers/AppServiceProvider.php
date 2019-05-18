@@ -14,6 +14,7 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         //
+        $this->app->bind('App\Repositories\AgendaRepositoryInterface','App\Repositories\AgendaRepository');
     }
 
     /**

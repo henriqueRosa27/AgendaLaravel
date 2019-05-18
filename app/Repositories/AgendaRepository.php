@@ -5,8 +5,9 @@ namespace App\Repositories;
 
 use App\Agenda;
 use Carbon\Carbon;
+use App\Repositories\AgendaRepositoryInterface;
 
-class AgendaRepository
+class AgendaRepository implements AgendaRepositoryInterface
 {
     protected $agenda;
 
@@ -49,7 +50,12 @@ class AgendaRepository
 
 
     //Regras de negócio;
-    public static function ValidaFinaisDeSemana($data){
+    public function ValidaFinaisDeSemana($data){
+        if($data == NULL){
+            return false;
+        }
+        $locale = 'pt_BR';
+        Carbon::setLocale($locale);
         $data = Carbon::parse($data);
         if($data->dayOfWeek == 6 || $data->dayOfWeek == 0){
             return true;
@@ -57,35 +63,13 @@ class AgendaRepository
         return false;
     }
 
-    public static function VerificaDataAgendaUp($dataInicial, $dataFinal, $responsavel){
+    public function VerificaDataAgendaUp($dataInicial, $dataFinal, $responsavel){
 
         $agenda = new Agenda;
         return $agenda->where('responsavel','=', $responsavel)->where(function($dado) use ($dataInicial,$dataFinal){
-                                                                $dado->whereBetween('data_inicio', [$dataInicial,$dataFinal])
-                                                                    ->orWhereBetween('data_prazo', [$dataInicial,$dataFinal]);
+                                                                    $dado->whereBetween('data_inicio', [$dataInicial,$dataFinal])
+                                                                        ->orWhereBetween('data_prazo', [$dataInicial,$dataFinal]);
         })->exists();
 
     }
-
-    public $regraValidacao = [
-        'data_inicio'       => 'required|date_format:Y-m-d',
-        'data_prazo'        => 'required|date_format:Y-m-d|after:data_inicio',
-        'data_conclusao'    => 'date_format:Y-m-d|after:data_inicio',
-        'status'            => 'required',
-        'titulo'            => 'required',
-        'responsavel'       => 'required',
-    ];
-    public $mensagemValidacao = [
-        'data_inicio.required'          => 'Campo data_inicio é um campo obrigatório.',
-        'data_prazo.required'           => 'Campo data_prazo é um campo obrigatório.',
-        'status.required'               => 'Campo status é um campo obrigatório.',
-        'titulo.required'               => 'Campo titulo é um campo obrigatório.',
-        'responsavel.required'          => 'Campo responsavel é um campo obrigatório.',
-        'data_inicio.date_format'       => 'Campo data_inicio deve ter o formato(Y-m-d).',
-        'data_prazo.date_format'        => 'Campo data_prazo deve ter o formato(Y-m-d).',
-        'data_conclusao.date_format'    => 'Campo data_conclusao deve ter o formato(Y-m-d).',
-        'data_prazo.after'              => 'Campo data_prazo deve ser maior que data_inicio.',
-        'data_conclusao.after'          => 'Campo data_conclusao deve ser maior que data_inicio.'
-    ];
-
 }
