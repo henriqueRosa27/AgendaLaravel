@@ -114,7 +114,7 @@ class AgendaController extends Controller
         $agenda = $this->agenda->find($id);
 
         if(!$agenda){
-            $return = ['data' => ['mg' => 'Produto não encontrado']];
+            $return = ['data' => ['mg' => 'Tarefa não encontrada']];
             return response()->json($return, 404);
         }
         /*$data = new Collection($this->agenda->all(), new TransformAgenda());
@@ -222,6 +222,11 @@ class AgendaController extends Controller
     public function delete($id)
     {
         try{
+            $agenda = $this->agenda->find($id);
+            if(!$agenda){
+                $return = ['data' => ['mg' => 'Tarefa não encontrada']];
+                return response()->json($return, 404);
+            }
             $this->agenda->delete($id);
             $return = ['data' => ['mg' => 'Tarefa excluida com sucesso']];
             return response()->json($return, 200);
