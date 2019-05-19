@@ -14,10 +14,10 @@ class TransformAgenda extends TransformerAbstract
             'data_inicio'       => $agenda->data_inicio,
             'data_prazo'        => $agenda->data_prazo,
             'data_conclusao'    => $agenda->data_conclusao,
-            'status'            => $agenda->status,
-            'titulo'            => $agenda->titulo,
-            'descricao'         => $agenda->descricao,
-            'responsavel'       => $agenda->responsavel
+            'status'            => (string)$agenda->status,
+            'titulo'            => (string)$agenda->titulo,
+            'descricao'         => (string)$agenda->descricao,
+            'responsavel'       => (string)$agenda->responsavel
         ];
     }
 }

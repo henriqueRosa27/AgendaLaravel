@@ -16,10 +16,8 @@ class AgendaTest extends TestCase
      *
      * @return void
      */
-    public function testExample()
+    public function AoAdicinar()
     {
-        $agenda = new Agenda;
-
-        $this->assertEquals('2000-05-09', $agenda->data_inicio);
+        $teste
     }
 }
