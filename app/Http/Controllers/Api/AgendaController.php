@@ -9,8 +9,8 @@ use App\Http\Controllers\Controller;
 //use App\Agenda; //Remover após implementear todo Repository
 use App\API\APIError;
 use App\Repositories\AgendaRepositoryInterface;
-use League\Fractal\Manager;
-use League\Fractal\Resource\Collection;
+//use League\Fractal\Manager;
+//use League\Fractal\Resource\Collection;
 
 class AgendaController extends Controller
 {
@@ -33,14 +33,9 @@ class AgendaController extends Controller
      */
     public function index()
     {
-        //$data = Funcoes::ValidaFinaisDeSemana('2019-05-16');
-        //$data = ['data' => $this->agenda->all()];
-        //$dados = $this->agenda->all();
-        /*$data = new Collection($this->agenda->all(), new TransformAgenda());
-        return $this->fractal->createData($data)->toJson();*/
         $dados = $this->agenda->all();
         $fractal = fractal($dados, new TransformAgenda());
-        return response()->json($fractal);
+        return response()->json($fractal, 200);
     }
 
     /**
@@ -53,13 +48,14 @@ class AgendaController extends Controller
     {
         try {
 
+
             $valida = validator($request->all(), Agenda::getRegraValidacao(), Agenda::getMensagemValidacao());
             if($valida->fails()){
-                //return $valida->errors();
                 $data = ['data' => $valida->messages()];
-                return response()->json($data);
+                return response()->json($data, 200);
             }
 
+            //Preferi não instanciar a classe, pois só irei usar alguns elementos
             $dataInicial = $request->get('data_inicio');
             $dataPrazo = $request->get('data_prazo');
             $responsavel = $request->get('responsavel');
@@ -67,36 +63,38 @@ class AgendaController extends Controller
             //Verifica Variavel data_conclusao recebida
             if (is_null($request->get('data_conclusao'))) {
                 $dataConclusao = NULL;
-            } else {
+            }
+            else {
                 $dataConclusao = $request->get('data_conclusao');
             }
 
             //Verifica Variavel descricao recebida
             if (is_null($request->get('descricao'))) {
                 $descricao = NULL;
-            } else {
+            }
+            else {
                 $descricao = $request->get('descricao');
             }
 
             //Valida Finais de semana
             if( $this->agenda->ValidaFinaisDeSemana($dataInicial) || $this->agenda->ValidaFinaisDeSemana($dataPrazo) || $this->agenda->ValidaFinaisDeSemana($dataConclusao)){
                 $data = ['data' => 'As datas não podem ser em finais de semana.'];
-                return response()->json($data);
+                return response()->json($data, 500);
             }
 
             //Validação para não sobrepor compromissos de um mesmo responsavel
             if($this->agenda->VerificaDataAgendaUp($dataInicial, $dataPrazo, $responsavel)){
                 $data = ['data' => 'Não pode cadastrar na mesma data ou que se sobreponham à outras datas de atividades de um mesmo responsavel'];
-                return response()->json($data);
+                return response()->json($data, 500);
             }
 
             $agendaData = $request->all();
             $this->agenda->create($agendaData);
 
-            $return = ['data' => ['mg' => 'Tarefa cadastrada com sucesso']];
-            return response()->json($return, 201);
+            $return = ['data' => ['msg' => 'Tarefa cadastrada com sucesso']];
+            return response()->json($return, 200);
         }
-        catch(\Exception $e){
+        catch(Exception $e){
             if(config('app.debug')){
                 return response()->json(APIError::MensagemErro($e->getMessage(), 1000), 500);
             }
@@ -123,7 +121,7 @@ class AgendaController extends Controller
         return $this->fractal->createData($data)->toJson();*/
         $data = ['data' => $agenda];
         $fractal = fractal($data, new TransformAgenda());
-        return response()->json($fractal);
+        return response()->json($fractal, 200);
     }
 
     /**
@@ -136,8 +134,11 @@ class AgendaController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            /*ESSA VALIDARCAO FOI RETIRADA, CASO RECEBA PARA SOMENTE UM DADO ATUALIZAR
-             *CASO OPTAR POR RECEBER TODOS OS DADOS DO USUARIO PARA DAR O UPDATE, SOMENTE DESCOMENTAR
+            /*
+             * Essa validação foi retirada, pois o cliente pode preferir enviar somente um dado do formulario
+             * para alteração, e essa validação iria validar todos os dados
+             */
+            /*
             $valida = validator($request->all(), $this->agenda->$regraValidacao, $this->agenda->mensagensValidacao);
             if($valida->fails()){
                 //return $valida->errors();
@@ -150,9 +151,14 @@ class AgendaController extends Controller
             $dataInicial = $request->get('data_inicio');
             //$dataPrazo = $request->get('data_prazo');
             $dataConclusao = $request->get('data_conclusao');
+
+            /*
+             * Pela lógica, depois de criado uma tarefa, a data inicial não poderá ser alterada
+             *sendo assim está regra impede isso
+             */
             if($busca->data_inicio != $dataInicial && !is_null($dataInicial)){
                 $data = ['data' => 'Data inicial não pode ser alterada'];
-                return response()->json($data);
+                return response()->json($data, 500);
             }
 
             //Verifica se recebeu novo dado
@@ -189,7 +195,7 @@ class AgendaController extends Controller
             //Validação para não sobrepor compromissos de um mesmo responsavel em relação as datas
             if($this->agenda->VerificaDataAgendaUp($dataInicial, $dataPrazo, $responsavel, $this->agenda)){
                 $data = ['data' => 'Não pode cadastrar na mesma data ou que se sobreponham à outras datas de atividades de um mesmo responsavel'];
-                return response()->json($data);
+                return response()->json($data, 500);
             }
 
             $agendaData = $request->all();
@@ -197,7 +203,7 @@ class AgendaController extends Controller
             $this->agenda->update($agendaData);
 
             $return = ['data' => ['mg' => 'Tarefa atualizada com sucesso']];
-            return response()->json($return, 201);
+            return response()->json($return, 200);
         }
         catch(\Exception $e){
             if(config('app.debug')){
@@ -218,7 +224,7 @@ class AgendaController extends Controller
         try{
             $this->agenda->delete($id);
             $return = ['data' => ['mg' => 'Tarefa excluida com sucesso']];
-            return response()->json($return, 201);
+            return response()->json($return, 200);
         }
         catch(\Exception $e){
             if(config('app.debug')){
