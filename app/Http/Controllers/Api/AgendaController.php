@@ -52,7 +52,7 @@ class AgendaController extends Controller
             $valida = validator($request->all(), Agenda::getRegraValidacao(), Agenda::getMensagemValidacao());
             if($valida->fails()){
                 $data = ['data' => $valida->messages()];
-                return response()->json($data, 200);
+                return response()->json($data, 500);
             }
 
             //Preferi não instanciar a classe, pois só irei usar alguns elementos
@@ -179,18 +179,18 @@ class AgendaController extends Controller
 
             if ($dataInicial > $dataPrazo) {
                 $data = ['data' => 'Data inicial maior que a final'];
-                return response()->json($data);
+                return response()->json($data, 500);
             }
             if ($dataConclusao != "0000-00-00" && !is_null($dataConclusao) && $dataInicial > $dataConclusao) {
                 $data = ['data' => 'Data inicial maior que a de conclusão'];
-                return response()->json($data);
+                return response()->json($data, 500);
             }
 
             //Valida Finais de semana
             //Retirada data_inicial, pois a validação já foi feita no insert, e não pode mais alterar a data a partir disso
             if( $this->agenda->ValidaFinaisDeSemana($dataPrazo) || $this->agenda->ValidaFinaisDeSemana($dataConclusao) || $this->agenda->ValidaFinaisDeSemana($dataConclusao)){
                 $data = ['data' => 'As datas não podem ser em finais de semana.'];
-                return response()->json($data);
+                return response()->json($data, 500);
             }
             //Validação para não sobrepor compromissos de um mesmo responsavel em relação as datas
             if($this->agenda->VerificaDataAgendaUp($dataInicial, $dataPrazo, $responsavel, $this->agenda)){
@@ -239,8 +239,12 @@ class AgendaController extends Controller
         }
     }
     public function search($data_inicial, $data_final){
+        if($data_inicial > $data_inicial) {
+            $data = ['data' => 'Ordem das datas informadas incorretamente'];
+            return response()->json($data, 500);
+        }
         $data = $this->agenda->search($data_inicial,$data_final);
         $data = ['data' => $data];
-        return response()->json($data);
+        return response()->json($data, 200);
     }
 }

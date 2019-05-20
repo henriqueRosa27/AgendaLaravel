@@ -26,9 +26,8 @@ class AgendaTest extends TestCase
         $response->assertStatus(404);
     }
 
-    /*public function testAoInserir()
+    public function testAoInserir()
     {
-        //Status esperado 500, por já haver registro para esse usuario na mesma data
         $dado = [
             'data_inicio'   =>'2019-07-24',
             'data_prazo'    =>'2019-07-25',
@@ -36,10 +35,10 @@ class AgendaTest extends TestCase
             'titulo'        =>'Tarefa 01',
             'responsavel'   =>'Teste'
         ];
+        //Status esperado 500, por já haver registro para esse usuario na mesma data
         $this->json('post','/api/agenda', $dado)
                 ->assertStatus(500);
 
-        //Status esperado 200, por ser um resgistro para um responsavel que não foi cadastrado ainda
         $dado = [
             'data_inicio'   =>'2019-07-24',
             'data_prazo'    =>'2019-07-25',
@@ -47,9 +46,32 @@ class AgendaTest extends TestCase
             'titulo'        =>'Tarefa 01',
             'responsavel'   =>'Test'
         ];
+        //Status esperado 200, por ser um resgistro para um responsavel que não foi cadastrado ainda
         $this->json('post','/api/agenda', $dado)
             ->assertStatus(200);
-    }*/
+
+        $dado = [
+            'data_inicio'   =>'2019-07-21',
+            'data_prazo'    =>'2019-07-25',
+            'status'        =>'Baklog',
+            'titulo'        =>'Tarefa 01',
+            'responsavel'   =>'Teste5'
+        ];
+        //Status esperado 500, devido as datas serem a uma das datas ser em final de semana
+        $this->json('post','/api/agenda', $dado)
+            ->assertStatus(500);
+
+        $dado = [
+            'data_inicio'   =>'2019-07-26',
+            'data_prazo'    =>'2019-07-25',
+            'status'        =>'Baklog',
+            'titulo'        =>'Tarefa 01',
+            'responsavel'   =>'Teste5'
+        ];
+        //Status esperado 500, devido a data_inicial ser maior que da data_prazo
+        $this->json('post','/api/agenda', $dado)
+            ->assertStatus(500);
+    }
 
     public function testAoUpdate(){
         $dado = [
