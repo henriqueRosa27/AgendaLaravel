@@ -154,7 +154,7 @@ class AgendaController extends Controller
 
             /*
              * Pela lógica, depois de criado uma tarefa, a data inicial não poderá ser alterada
-             *sendo assim está regra impede isso
+             * sendo assim está regra impede isso
              */
             if($busca->data_inicio != $dataInicial && !is_null($dataInicial)){
                 $data = ['data' => 'Data inicial não pode ser alterada'];
